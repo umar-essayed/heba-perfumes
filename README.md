@@ -8,8 +8,8 @@
   [![Next.js 14](https://img.shields.io/badge/Next.js-14.2-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
   [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-  [![Firebase Firestore](https://img.shields.io/badge/Firebase-Firestore-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
   [![Tests Passing](https://img.shields.io/badge/Tests-100%25%20Passed-brightgreen?style=for-the-badge)](https://github.com/)
+  [![Developer](https://img.shields.io/badge/Developer-3amor%20%7C%2001553442304-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://wa.me/201553442304)
 
   <p align="center">
     <strong>متجر عطور إلكتروني متكامل بطابع الفخامة الهادئة (Quiet Luxury)، نصوص مصرية أصيلة تخاطب الذوق العالي، ولوحة تحكم إدارية كاملة متصلة لحظياً بـ Google Firebase Firestore.</strong>
@@ -165,6 +165,14 @@ npm run dev
 
 ---
 
+## 👨‍💻 التطوير والدعم الفني (Developer)
+* **تطوير وتصميم:** **3amor**
+* **واتساب وهاتف:** [`01553442304`](https://wa.me/201553442304) (تواصل مباشر بضغطة زر)
+* **GitHub:** [@umar-essayed](https://github.com/umar-essayed)
+
+---
+
 <div align="center">
-  <sub>صُنع بكل إتقان وفخامة تليق بعلامة <strong>هَيْبَة للعطور</strong> 👑</sub>
+  <sub>صُنع وتطوّر بكل إتقان وفخامة بواسطة <strong>3amor</strong> لعلامة <strong>هَيْبَة للعطور</strong> 👑</sub>
 </div>
+

@@ -202,7 +202,20 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-zinc-500">
           <p>© {new Date().getFullYear()} هَيْبَة للعطور. الإسكندرية - العامرية ثان. جميع الحقوق محفوظة.</p>
-          <p className="text-zinc-400">صُنع بحب وإتقان في مصر</p>
+          <div className="flex items-center gap-2">
+            <span className="text-zinc-400">تطوير:</span>
+            <a
+              href="https://wa.me/201553442304"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[#C5A880] hover:text-white font-medium bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-full border border-white/10 transition-colors"
+              title="تواصل مع المطور عبر واتساب"
+            >
+              <span className="font-bold">3amor</span>
+              <span className="text-zinc-500">|</span>
+              <span className="font-mono text-[10px] text-emerald-400" dir="ltr">01553442304</span>
+            </a>
+          </div>
         </div>
 
       </div>
