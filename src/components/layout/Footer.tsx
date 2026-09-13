@@ -191,9 +191,6 @@ export default function Footer() {
                 <Link href="/track-order" className="text-zinc-400 hover:text-white transition-colors block py-1">
                   تتبع طلبك برقم الهاتف ←
                 </Link>
-                <Link href="/admin" className="text-zinc-500 hover:text-zinc-300 transition-colors block py-1">
-                  لوحة التحكم (Admin)
-                </Link>
               </div>
             </div>
           </div>
