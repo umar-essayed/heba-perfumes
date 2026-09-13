@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
-import { INITIAL_PRODUCTS, INITIAL_COUPONS, EGYPT_GOVERNORATES } from '@/lib/data/initialProducts';
+import { INITIAL_PRODUCTS, INITIAL_COUPONS, EGYPT_GOVERNORATES, DEFAULT_PAYMENT_SETTINGS } from '@/lib/data/initialProducts';
 
 export async function GET() {
   try {
@@ -32,6 +32,13 @@ export async function GET() {
         updatedAt: new Date().toISOString()
       }, { merge: true });
     }
+
+    // 3.5 Seed Payment Settings
+    const paymentRef = adminDb.collection('settings').doc('payment_methods');
+    batch.set(paymentRef, {
+      ...DEFAULT_PAYMENT_SETTINGS,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
 
     // 4. Sample realistic orders for dashboard preview
     const sampleOrders = [

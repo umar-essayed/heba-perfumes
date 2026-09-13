@@ -2,7 +2,7 @@ import admin from 'firebase-admin';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { INITIAL_PRODUCTS, INITIAL_COUPONS, EGYPT_GOVERNORATES } from '../src/lib/data/initialProducts.ts';
+import { INITIAL_PRODUCTS, INITIAL_COUPONS, EGYPT_GOVERNORATES, DEFAULT_PAYMENT_SETTINGS } from '../src/lib/data/initialProducts.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,9 +57,16 @@ async function runSeed() {
     }, { merge: true });
   }
 
+  // 4. Seed Payment Settings
+  const paymentRef = db.collection('settings').doc('payment_methods');
+  batch.set(paymentRef, {
+    ...DEFAULT_PAYMENT_SETTINGS,
+    updatedAt: new Date().toISOString()
+  }, { merge: true });
+
   try {
     await batch.commit();
-    console.log(`✅ Seeded ${INITIAL_PRODUCTS.length} official perfumes, ${INITIAL_COUPONS.length} coupons, and ${EGYPT_GOVERNORATES.length} governorates into Firestore!`);
+    console.log(`✅ Seeded ${INITIAL_PRODUCTS.length} official perfumes, ${INITIAL_COUPONS.length} coupons, ${EGYPT_GOVERNORATES.length} governorates, and payment settings into Firestore!`);
   } catch (err) {
     console.error('Seeding error:', err.message);
   }

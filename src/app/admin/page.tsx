@@ -27,10 +27,13 @@ import {
   X,
   Check,
   SlidersHorizontal,
-  ChevronDown
+  ChevronDown,
+  Wallet,
+  CreditCard,
+  Copy
 } from 'lucide-react';
-import { Order, PerfumeProduct, OrderStatus, Coupon } from '@/types';
-import { INITIAL_PRODUCTS, INITIAL_COUPONS, EGYPT_GOVERNORATES } from '@/lib/data/initialProducts';
+import { Order, PerfumeProduct, OrderStatus, Coupon, PaymentSettings } from '@/types';
+import { INITIAL_PRODUCTS, INITIAL_COUPONS, EGYPT_GOVERNORATES, DEFAULT_PAYMENT_SETTINGS } from '@/lib/data/initialProducts';
 
 export default function AdminPage() {
   // Authentication State
@@ -41,7 +44,7 @@ export default function AdminPage() {
   const [authLoading, setAuthLoading] = useState(false);
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'coupons'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'coupons' | 'payments'>('orders');
 
   // Data State
   const [orders, setOrders] = useState<Order[]>([]);
@@ -101,6 +104,11 @@ export default function AdminPage() {
     paymentMethod: 'cod' as 'cod' | 'instapay'
   });
 
+  // Payment Settings State
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(DEFAULT_PAYMENT_SETTINGS);
+  const [paymentSaveLoading, setPaymentSaveLoading] = useState(false);
+  const [paymentSaveMsg, setPaymentSaveMsg] = useState<{ success: boolean; text: string } | null>(null);
+
   // 1. Check Auth on mount
   const checkAuth = async () => {
     try {
@@ -111,6 +119,7 @@ export default function AdminPage() {
         fetchOrders();
         fetchProducts();
         fetchCoupons();
+        fetchPaymentSettings();
       }
     } catch (e) {
       setIsAuthenticated(false);
@@ -120,6 +129,50 @@ export default function AdminPage() {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  const fetchPaymentSettings = async () => {
+    try {
+      const res = await fetch('/api/settings/payment');
+      const data = await res.json();
+      if (data.success && data.data) {
+        setPaymentSettings(data.data);
+      }
+    } catch (e) {
+      console.error('Error fetching payment settings:', e);
+    }
+  };
+
+  const handleSavePaymentSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPaymentSaveLoading(true);
+    setPaymentSaveMsg(null);
+    try {
+      const res = await fetch('/api/settings/payment', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paymentSettings)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPaymentSaveMsg({ success: true, text: 'تم حفظ وتحديث أرقام الكاش وإنستاباي بنجاح في Firebase وقاعدة البيانات! ✨' });
+        setPaymentSettings(data.data);
+      } else {
+        setPaymentSaveMsg({ success: false, text: data.error || 'فشل في حفظ البيانات' });
+      }
+    } catch (err: any) {
+      setPaymentSaveMsg({ success: false, text: 'تعذر الاتصال بالخادم.' });
+    } finally {
+      setPaymentSaveLoading(false);
+      setTimeout(() => setPaymentSaveMsg(null), 5000);
+    }
+  };
+
+  const handleResetPaymentDefaults = () => {
+    setPaymentSettings({
+      ...DEFAULT_PAYMENT_SETTINGS,
+      updatedAt: new Date().toISOString()
+    });
+  };
 
   // 2. Auth handlers
   const handleLogin = async (e: React.FormEvent) => {
@@ -141,6 +194,7 @@ export default function AdminPage() {
         fetchOrders();
         fetchProducts();
         fetchCoupons();
+        fetchPaymentSettings();
       } else {
         setAuthError(data.error || 'كلمة المرور غير صحيحة.');
       }
@@ -787,6 +841,21 @@ export default function AdminPage() {
             >
               كوبونات الخصم ({coupons.length})
             </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('payments');
+                fetchPaymentSettings();
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 ${
+                activeTab === 'payments'
+                  ? 'bg-white text-black font-semibold shadow-sm'
+                  : 'bg-transparent text-zinc-400 hover:text-white'
+              }`}
+            >
+              <Wallet className="w-3.5 h-3.5" />
+              <span>المحافظ وإنستاباي</span>
+            </button>
           </div>
 
           {/* Quick Create Buttons per Tab */}
@@ -1157,6 +1226,267 @@ export default function AdminPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* TAB 4: WALLETS & INSTAPAY SETTINGS */}
+        {/* ======================================================== */}
+        {activeTab === 'payments' && (
+          <div className="space-y-6">
+            {/* Intro Card */}
+            <div className="bg-[#121212] border border-white/[0.08] rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Wallet className="w-4 h-4 text-[#C5A880]" />
+                  <span>إدارة أرقام المحافظ الإلكترونية و إنستاباي (InstaPay)</span>
+                </h3>
+                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                  تحكم في أرقام الهواتف ومعرّفات التحويل التي تظهر للعملاء في صفحة إتمام الطلب (Checkout). يتم الحفظ والتحديث فوراً في Firebase Firestore.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleResetPaymentDefaults}
+                  className="px-3 py-2 rounded-xl border border-white/10 hover:border-white/20 text-xs text-zinc-300 hover:text-white transition-colors"
+                >
+                  استعادة الافتراضي (01003508854)
+                </button>
+              </div>
+            </div>
+
+            {/* Notification message */}
+            {paymentSaveMsg && (
+              <div
+                className={`p-4 rounded-xl text-xs flex items-center gap-2 ${
+                  paymentSaveMsg.success
+                    ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'
+                    : 'bg-rose-500/10 border border-rose-500/20 text-rose-300'
+                }`}
+              >
+                {paymentSaveMsg.success ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                )}
+                <span>{paymentSaveMsg.text}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Form Column */}
+              <div className="lg:col-span-7 bg-[#121212] border border-white/[0.08] rounded-2xl p-6 space-y-5">
+                <h4 className="text-xs font-bold text-white border-b border-white/[0.06] pb-3 flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-[#C5A880]" />
+                  <span>تعديل بيانات وأرقام التحويل</span>
+                </h4>
+
+                <form onSubmit={handleSavePaymentSettings} className="space-y-4 text-xs">
+                  {/* Cash Phone */}
+                  <div className="space-y-1.5">
+                    <label className="block text-zinc-300 font-medium">
+                      رقم محفظة الكاش الأساسية (فودافون كاش / اتصالات / أورانج / وي): <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      dir="ltr"
+                      value={paymentSettings.cashPhone}
+                      onChange={e => setPaymentSettings({ ...paymentSettings, cashPhone: e.target.value })}
+                      placeholder="01003508854"
+                      className="w-full bg-[#181818] border border-white/10 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-[#C5A880]"
+                    />
+                    <span className="text-[11px] text-zinc-500 block">الافتراضي: 01003508854 (نفس رقم المتجر والواتساب الرسمي).</span>
+                  </div>
+
+                  {/* Secondary Cash Phone */}
+                  <div className="space-y-1.5">
+                    <label className="block text-zinc-300 font-medium">
+                      رقم محفظة كاش إضافي (اختياري في حال امتلاك أكثر من خط):
+                    </label>
+                    <input
+                      type="text"
+                      dir="ltr"
+                      value={paymentSettings.secondaryCashPhone || ''}
+                      onChange={e => setPaymentSettings({ ...paymentSettings, secondaryCashPhone: e.target.value })}
+                      placeholder="مثال: 01234567890"
+                      className="w-full bg-[#181818] border border-white/10 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-[#C5A880]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* InstaPay Phone */}
+                    <div className="space-y-1.5">
+                      <label className="block text-zinc-300 font-medium">
+                        رقم هاتف إنستاباي (InstaPay): <span className="text-rose-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        dir="ltr"
+                        value={paymentSettings.instapayPhone}
+                        onChange={e => setPaymentSettings({ ...paymentSettings, instapayPhone: e.target.value })}
+                        placeholder="01003508854"
+                        className="w-full bg-[#181818] border border-white/10 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-[#C5A880]"
+                      />
+                      <span className="text-[10px] text-zinc-500 block">الافتراضي: 01003508854</span>
+                    </div>
+
+                    {/* InstaPay IPA Handle */}
+                    <div className="space-y-1.5">
+                      <label className="block text-zinc-300 font-medium">
+                        معرّف الدفع اللحظي (IPA Handle):
+                      </label>
+                      <input
+                        type="text"
+                        dir="ltr"
+                        value={paymentSettings.instapayUsername || ''}
+                        onChange={e => setPaymentSettings({ ...paymentSettings, instapayUsername: e.target.value })}
+                        placeholder="01003508854@instapay"
+                        className="w-full bg-[#181818] border border-white/10 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-[#C5A880]"
+                      />
+                      <span className="text-[10px] text-zinc-500 block">مثال: 01003508854@instapay</span>
+                    </div>
+                  </div>
+
+                  {/* Account Holder Name */}
+                  <div className="space-y-1.5">
+                    <label className="block text-zinc-300 font-medium">
+                      اسم صاحب الحساب أو المحفظة:
+                    </label>
+                    <input
+                      type="text"
+                      value={paymentSettings.accountHolderName}
+                      onChange={e => setPaymentSettings({ ...paymentSettings, accountHolderName: e.target.value })}
+                      placeholder="هَيْبَة للعطور"
+                      className="w-full bg-[#181818] border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-[#C5A880]"
+                    />
+                  </div>
+
+                  {/* Transfer Instructions */}
+                  <div className="space-y-1.5">
+                    <label className="block text-zinc-300 font-medium">
+                      تعليمات وتنبيه التحويل للعميل:
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={paymentSettings.transferInstructions || ''}
+                      onChange={e => setPaymentSettings({ ...paymentSettings, transferInstructions: e.target.value })}
+                      placeholder="يرجى إرسال لقطة شاشة (سكرين شوت) للتحويل على الواتساب 01003508854 لتأكيد الأوردر فوراً."
+                      className="w-full bg-[#181818] border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-[#C5A880] resize-none leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={paymentSaveLoading}
+                      className="w-full py-3.5 rounded-xl bg-[#C5A880] hover:bg-[#D8BD97] text-black font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50"
+                    >
+                      {paymentSaveLoading ? (
+                        <span>جاري الحفظ في Firestore...</span>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>حفظ وتطبيق بيانات الدفع على المتجر فوراً</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Preview Column */}
+              <div className="lg:col-span-5 space-y-4">
+                <div className="bg-[#121212] border border-white/[0.08] rounded-2xl p-6 space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+                    <h4 className="text-xs font-bold text-white flex items-center gap-2">
+                      <Eye className="w-4 h-4 text-[#C5A880]" />
+                      <span>معاينة حية لشاشة العميل (Checkout Preview)</span>
+                    </h4>
+                    <span className="text-[10px] bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 px-2 py-0.5 rounded-full font-medium">
+                      مباشر الآن
+                    </span>
+                  </div>
+
+                  {/* Customer view simulation */}
+                  <div className="p-4 bg-[#141416] border border-white/10 rounded-xl space-y-3.5 text-right">
+                    <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
+                      <span className="text-xs font-bold text-white">بيانات التحويل المعتمدة لمتجر هَيْبَة</span>
+                      {paymentSettings.accountHolderName && (
+                        <span className="text-[10px] text-[#C5A880] font-medium bg-[#C5A880]/10 px-2 py-0.5 rounded border border-[#C5A880]/20">
+                          باسم: {paymentSettings.accountHolderName}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Cash Wallet Box */}
+                    <div className="bg-[#1C1C1F] border border-white/[0.06] rounded-lg p-3 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
+                          فودافون كاش والمحافظ
+                        </span>
+                        <span className="text-[10px] text-[#C5A880] bg-white/5 px-2 py-0.5 rounded">
+                          زر نسخ للعميل
+                        </span>
+                      </div>
+                      <div className="flex items-baseline justify-between pt-1">
+                        <span className="text-xs text-zinc-400">رقم المحفظة:</span>
+                        <span className="text-sm font-bold font-mono tracking-wider text-white" dir="ltr">
+                          {paymentSettings.cashPhone || '01003508854'}
+                        </span>
+                      </div>
+                      {paymentSettings.secondaryCashPhone && (
+                        <div className="flex items-baseline justify-between pt-1 border-t border-white/[0.04]">
+                          <span className="text-xs text-zinc-400">محفظة إضافية:</span>
+                          <span className="text-xs font-mono text-zinc-300" dir="ltr">
+                            {paymentSettings.secondaryCashPhone}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* InstaPay Box */}
+                    <div className="bg-[#1C1C1F] border border-white/[0.06] rounded-lg p-3 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-violet-500 inline-block"></span>
+                          إنستاباي (InstaPay)
+                        </span>
+                        <span className="text-[10px] text-[#C5A880] bg-white/5 px-2 py-0.5 rounded">
+                          زر نسخ للعميل
+                        </span>
+                      </div>
+                      <div className="flex items-baseline justify-between pt-1">
+                        <span className="text-xs text-zinc-400">رقم الهاتف:</span>
+                        <span className="text-sm font-bold font-mono tracking-wider text-white" dir="ltr">
+                          {paymentSettings.instapayPhone || '01003508854'}
+                        </span>
+                      </div>
+                      {paymentSettings.instapayUsername && (
+                        <div className="flex items-baseline justify-between pt-1 border-t border-white/[0.04]">
+                          <span className="text-xs text-zinc-400">معرّف IPA:</span>
+                          <span className="text-xs font-mono text-[#C5A880]" dir="ltr">
+                            {paymentSettings.instapayUsername}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Instructions Box */}
+                    <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start gap-2">
+                      <MessageCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                      <p className="text-[10px] leading-relaxed text-amber-200">
+                        {paymentSettings.transferInstructions || 'يرجى إرسال لقطة شاشة للتحويل عبر الواتساب لتأكيد الأوردر فوراً.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

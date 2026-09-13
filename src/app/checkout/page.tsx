@@ -12,7 +12,9 @@ import {
   ChevronRight,
   MessageCircle,
   AlertCircle,
-  ShoppingBag
+  ShoppingBag,
+  Copy,
+  Check
 } from 'lucide-react';
 import { useCart } from '@/lib/context/CartContext';
 import { EGYPT_GOVERNORATES } from '@/lib/data/initialProducts';
@@ -54,6 +56,43 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [completedOrder, setCompletedOrder] = useState<any>(null);
+
+  // Dynamic Payment Settings State
+  const [paymentSettings, setPaymentSettings] = useState<{
+    cashPhone: string;
+    secondaryCashPhone?: string;
+    instapayPhone: string;
+    instapayUsername?: string;
+    accountHolderName?: string;
+    transferInstructions?: string;
+  }>({
+    cashPhone: '01003508854',
+    secondaryCashPhone: '',
+    instapayPhone: '01003508854',
+    instapayUsername: '01003508854@instapay',
+    accountHolderName: 'هَيْبَة للعطور',
+    transferInstructions: 'يرجى إرسال لقطة شاشة (سكرين شوت) للتحويل على الواتساب 01003508854 لتأكيد الأوردر فوراً.'
+  });
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const handleCopyText = (text: string, fieldKey: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedField(fieldKey);
+      setTimeout(() => setCopiedField(null), 2500);
+    }
+  };
+
+  useEffect(() => {
+    fetch('/api/settings/payment')
+      .then(r => r.json())
+      .then(res => {
+        if (res?.success && res?.data) {
+          setPaymentSettings(res.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Sync governorate with shippingZone
   useEffect(() => {
@@ -474,9 +513,126 @@ export default function CheckoutPage() {
               </div>
 
               {paymentMethod === 'instapay' && (
-                <div className="p-3 bg-[#18181B] rounded-lg text-xs text-zinc-300 space-y-1">
-                  <p>عنوان إنستاباي (IPA): <strong className="text-white font-mono">heba.perfumes@instapay</strong></p>
-                  <p>رقم فودافون كاش / إنستاباي: <strong className="text-white font-mono">01003508854</strong></p>
+                <div className="p-4 bg-[#141416] border border-white/10 rounded-xl space-y-3.5">
+                  {/* Header / Instructions */}
+                  <div className="flex items-center justify-between pb-2.5 border-b border-white/[0.06]">
+                    <span className="text-xs font-bold text-white">بيانات التحويل المعتمدة لمتجر هَيْبَة</span>
+                    {paymentSettings.accountHolderName && (
+                      <span className="text-[11px] text-[#C5A880] font-medium bg-[#C5A880]/10 px-2 py-0.5 rounded border border-[#C5A880]/20">
+                        باسم: {paymentSettings.accountHolderName}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Cash Wallet Card */}
+                  <div className="bg-[#1C1C1F] border border-white/[0.06] rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
+                        فودافون كاش والمحافظ الإلكترونية
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyText(paymentSettings.cashPhone, 'cash')}
+                        className="text-[11px] flex items-center gap-1 text-[#C5A880] hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded border border-white/10"
+                      >
+                        {copiedField === 'cash' ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-400" />
+                            <span className="text-emerald-400 font-medium">تم النسخ</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            <span>نسخ الرقم</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="flex items-baseline justify-between pt-1">
+                      <span className="text-xs text-zinc-400">رقم المحفظة:</span>
+                      <span className="text-sm font-bold font-mono tracking-wider text-white" dir="ltr">
+                        {paymentSettings.cashPhone}
+                      </span>
+                    </div>
+                    {paymentSettings.secondaryCashPhone && (
+                      <div className="flex items-baseline justify-between pt-1.5 border-t border-white/[0.04]">
+                        <span className="text-xs text-zinc-400">رقم محفظة إضافي:</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(paymentSettings.secondaryCashPhone!, 'secondaryCash')}
+                            className="text-[10px] text-zinc-400 hover:text-white underline"
+                          >
+                            {copiedField === 'secondaryCash' ? '✓ تم' : 'نسخ'}
+                          </button>
+                          <span className="text-xs font-mono text-zinc-300" dir="ltr">
+                            {paymentSettings.secondaryCashPhone}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* InstaPay Card */}
+                  <div className="bg-[#1C1C1F] border border-white/[0.06] rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-violet-500 inline-block"></span>
+                        إنستاباي (InstaPay)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyText(paymentSettings.instapayPhone, 'instapay')}
+                        className="text-[11px] flex items-center gap-1 text-[#C5A880] hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded border border-white/10"
+                      >
+                        {copiedField === 'instapay' ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-400" />
+                            <span className="text-emerald-400 font-medium">تم النسخ</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            <span>نسخ رقم إنستا</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="flex items-baseline justify-between pt-1">
+                      <span className="text-xs text-zinc-400">رقم الهاتف المسجل:</span>
+                      <span className="text-sm font-bold font-mono tracking-wider text-white" dir="ltr">
+                        {paymentSettings.instapayPhone}
+                      </span>
+                    </div>
+
+                    {paymentSettings.instapayUsername && (
+                      <div className="flex items-baseline justify-between pt-1.5 border-t border-white/[0.04]">
+                        <span className="text-xs text-zinc-400">معرّف الدفع اللحظي (IPA):</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(paymentSettings.instapayUsername!, 'ipa')}
+                            className="text-[10px] text-zinc-400 hover:text-white underline"
+                          >
+                            {copiedField === 'ipa' ? '✓ تم' : 'نسخ'}
+                          </button>
+                          <span className="text-xs font-mono text-[#C5A880]" dir="ltr">
+                            {paymentSettings.instapayUsername}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Transfer Note / Confirmation */}
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start gap-2.5">
+                    <MessageCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] leading-relaxed text-amber-200">
+                      {paymentSettings.transferInstructions || 'يرجى إرسال لقطة شاشة (سكرين شوت) لإشعار التحويل عبر الواتساب على 01003508854 لتأكيد وشحن الأوردر فوراً.'}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

@@ -403,12 +403,83 @@ async function runTests() {
   }
 
   // -------------------------------------------------------------
+  // TEST 9: Payment Settings CRUD (Cash Wallets & InstaPay)
+  // -------------------------------------------------------------
+  section('9. فحص وتعديل أرقام المحافظ وإنستاباي في Firestore (Payment Settings CRUD)');
+  try {
+    const cookieHeader = `heba_admin_token=${adminToken}`;
+
+    // 9.1 Read settings
+    const getSettingsRes = await fetch(`${BASE_URL}/api/settings/payment`);
+    const settingsData = await getSettingsRes.json();
+    if (settingsData.success && settingsData.data.cashPhone === '01003508854' && settingsData.data.instapayPhone === '01003508854') {
+      pass(`القراءة الأولية: أرقام الكاش وإنستاباي الافتراضية مطابقة لرقم الواتساب الرسمي (01003508854)`);
+    } else {
+      fail(`أرقام الدفع الافتراضية غير مطابقة: ${JSON.stringify(settingsData)}`);
+    }
+
+    // 9.2 Update settings as Admin
+    const updatedPayload = {
+      cashPhone: '01003508854',
+      secondaryCashPhone: '01011223344',
+      instapayPhone: '01003508854',
+      instapayUsername: '01003508854@instapay',
+      accountHolderName: 'هَيْبَة للعطور الفاخرة',
+      transferInstructions: 'يرجى إرسال لقطة شاشة للتحويل على الواتساب 01003508854 لتأكيد الأوردر فوراً.'
+    };
+
+    const putSettingsRes = await fetch(`${BASE_URL}/api/settings/payment`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': cookieHeader
+      },
+      body: JSON.stringify(updatedPayload)
+    });
+    const putResult = await putSettingsRes.json();
+
+    if (putResult.success && putResult.data.secondaryCashPhone === '01011223344') {
+      pass(`تحديث الإدارة: تم تعديل بيانات الدفع بنجاح عبر API لوحة التحكم`);
+    } else {
+      fail(`فشل تحديث بيانات الدفع: ${JSON.stringify(putResult)}`);
+    }
+
+    // 9.3 Verify directly in Firestore
+    const settingsDoc = await db.collection('settings').doc('payment_methods').get();
+    if (settingsDoc.exists && settingsDoc.data().secondaryCashPhone === '01011223344') {
+      pass(`تم التحقق: البيانات الجديدة تم حفظها بدقة في مستند settings/payment_methods في Firestore`);
+    } else {
+      fail(`مستند settings/payment_methods في Firestore لم يتم تحديثه!`);
+    }
+
+    // 9.4 Revert to clean default
+    await fetch(`${BASE_URL}/api/settings/payment`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': cookieHeader
+      },
+      body: JSON.stringify({
+        cashPhone: '01003508854',
+        secondaryCashPhone: '',
+        instapayPhone: '01003508854',
+        instapayUsername: '01003508854@instapay',
+        accountHolderName: 'هَيْبَة للعطور',
+        transferInstructions: 'يرجى إرسال لقطة شاشة (سكرين شوت) للتحويل على الواتساب 01003508854 لتأكيد الأوردر فوراً.'
+      })
+    });
+    pass(`إعادة التعيين: تم استعادة الحالة الافتراضية النظيفة بنجاح`);
+  } catch (err) {
+    fail('خطأ أثناء اختبار بيانات الدفع والمحافظ', err);
+  }
+
+  // -------------------------------------------------------------
   // FINAL SUMMARY
   // -------------------------------------------------------------
   console.log(`\n${colors.bright}${colors.green}════════════════════════════════════════════════════════════${colors.reset}`);
-  console.log(`${colors.bright}${colors.green}  🎉 كل الاختبارات اجتازت بنجاح 100%!  ${colors.reset}`);
+  console.log(`${colors.bright}${colors.green}  🎉 كل الاختبارات الـ 9 اجتازت بنجاح 100%!  ${colors.reset}`);
   console.log(`${colors.bright}${colors.green}  Firebase Firestore يعمل بكفاءة وأمان تام في كل العمليات:  ${colors.reset}`);
-  console.log(`${colors.bright}${colors.green}  [الاتصال - الكتالوج - الكوبونات - إنشاء الطلب - التتبع - لوحة الإدارة - التحديث - الحذف]${colors.reset}`);
+  console.log(`${colors.bright}${colors.green}  [الاتصال - الكتالوج - الكوبونات - إنشاء الطلب - التتبع - لوحة الإدارة - المحافظ وإنستاباي - التحديث - الحذف]${colors.reset}`);
   console.log(`${colors.bright}${colors.green}════════════════════════════════════════════════════════════\n${colors.reset}`);
 
   process.exit(0);

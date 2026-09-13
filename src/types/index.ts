@@ -96,3 +96,13 @@ export interface ShippingZone {
   cost: number;
   estimatedDelivery: string;
 }
+
+export interface PaymentSettings {
+  cashPhone: string;
+  secondaryCashPhone?: string;
+  instapayPhone: string;
+  instapayUsername?: string;
+  accountHolderName: string;
+  transferInstructions?: string;
+  updatedAt?: string;
+}

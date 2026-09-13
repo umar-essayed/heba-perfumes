@@ -1,4 +1,4 @@
-import type { PerfumeProduct, ShippingZone, Coupon } from '../../types/index.ts';
+import type { PerfumeProduct, ShippingZone, Coupon, PaymentSettings } from '../../types/index.ts';
 
 export const INITIAL_PRODUCTS: PerfumeProduct[] = [
   {
@@ -675,3 +675,14 @@ export const INITIAL_COUPONS: Coupon[] = [
     isActive: true
   }
 ];
+
+export const DEFAULT_PAYMENT_SETTINGS: PaymentSettings = {
+  cashPhone: '01003508854',
+  secondaryCashPhone: '',
+  instapayPhone: '01003508854',
+  instapayUsername: '01003508854@instapay',
+  accountHolderName: 'هَيْبَة للعطور',
+  transferInstructions: 'يرجى إرسال لقطة شاشة (سكرين شوت) للتحويل على الواتساب 01003508854 لتأكيد الأوردر فوراً.',
+  updatedAt: new Date().toISOString()
+};
+
