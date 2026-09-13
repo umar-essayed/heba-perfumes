@@ -56,6 +56,8 @@ async function runTests() {
   let testOrderNumber = null;
   const testPhone = '01099887766';
   let adminToken = null;
+  let cookieHeader = null;
+  let authHeaders = null;
 
   // -------------------------------------------------------------
   // TEST 1: Direct Firestore Connectivity & Schema Validation
@@ -256,6 +258,12 @@ async function runTests() {
       const match = setCookieHeader.match(/heba_admin_token=([^;]+)/);
       if (match) {
         adminToken = match[1];
+        cookieHeader = `heba_admin_token=${adminToken}`;
+        authHeaders = {
+          'Content-Type': 'application/json',
+          'Cookie': cookieHeader,
+          'Authorization': `Bearer ${adminToken}`
+        };
         pass(`تم استخراج توكن HMAC المشفر بنجاح: ${adminToken.slice(0, 16)}...`);
       }
     } else {
@@ -270,12 +278,6 @@ async function runTests() {
   // -------------------------------------------------------------
   section('6. إدارة الطلب من لوحة التحكم وتحديث الحالات في Firestore');
   try {
-    const authHeaders = {
-      'Content-Type': 'application/json',
-      'Cookie': cookieHeader,
-      'Authorization': `Bearer ${adminToken}`
-    };
-
     // 6.1 Update status to 'preparing' (جاري التجهيز)
     const patch1 = await fetch(`${BASE_URL}/api/orders`, {
       method: 'PATCH',
@@ -368,11 +370,6 @@ async function runTests() {
   // -------------------------------------------------------------
   section('8. حذف طلب الاختبار والتنظيف التام من Firestore (CRUD Delete)');
   try {
-    const authHeaders = {
-      'Content-Type': 'application/json',
-      'Cookie': cookieHeader,
-      'Authorization': `Bearer ${adminToken}`
-    };
     const delRes = await fetch(`${BASE_URL}/api/orders?orderId=${testOrderNumber}`, {
       method: 'DELETE',
       headers: authHeaders
@@ -407,13 +404,6 @@ async function runTests() {
   // -------------------------------------------------------------
   section('9. فحص وتعديل أرقام المحافظ وإنستاباي في Firestore (Payment Settings CRUD)');
   try {
-    const cookieHeader = `heba_admin_token=${adminToken}`;
-    const authHeaders = {
-      'Content-Type': 'application/json',
-      'Cookie': cookieHeader,
-      'Authorization': `Bearer ${adminToken}`
-    };
-
     // 9.1 Read settings
     const getSettingsRes = await fetch(`${BASE_URL}/api/settings/payment`);
     const settingsData = await getSettingsRes.json();
