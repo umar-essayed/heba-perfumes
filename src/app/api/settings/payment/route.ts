@@ -5,6 +5,8 @@ import { verifyAdminToken } from '@/lib/auth/adminAuth';
 import { DEFAULT_PAYMENT_SETTINGS } from '@/lib/data/initialProducts';
 import type { PaymentSettings } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
 // GET: Fetch active payment settings
 export async function GET() {
   try {

@@ -43,3 +43,5 @@ serviceAccountKey.json
 *.njsproj
 *.sln
 *.sw?
+.vercel
+.env*

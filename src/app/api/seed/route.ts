@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 import { INITIAL_PRODUCTS, INITIAL_COUPONS, EGYPT_GOVERNORATES, DEFAULT_PAYMENT_SETTINGS } from '@/lib/data/initialProducts';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const batch = adminDb.batch();

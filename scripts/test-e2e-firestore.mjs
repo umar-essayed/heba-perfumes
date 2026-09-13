@@ -240,11 +240,12 @@ async function runTests() {
       fail('ثغرة أمنية: تم قبول كلمة مرور خاطئة أو كود استجابة غير صحيح!');
     }
 
-    // 5.2 Correct password attempt (heba2026)
+    // 5.2 Correct password attempt
+    const targetPassword = process.env.ADMIN_PASSWORD || 'heba2026';
     const validAuthRes = await fetch(`${BASE_URL}/api/admin/auth`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: 'heba2026' })
+      body: JSON.stringify({ password: targetPassword })
     });
     const authData = await validAuthRes.json();
     const setCookieHeader = validAuthRes.headers.get('set-cookie');
@@ -269,15 +270,16 @@ async function runTests() {
   // -------------------------------------------------------------
   section('6. إدارة الطلب من لوحة التحكم وتحديث الحالات في Firestore');
   try {
-    const cookieHeader = `heba_admin_token=${adminToken}`;
+    const authHeaders = {
+      'Content-Type': 'application/json',
+      'Cookie': cookieHeader,
+      'Authorization': `Bearer ${adminToken}`
+    };
 
     // 6.1 Update status to 'preparing' (جاري التجهيز)
     const patch1 = await fetch(`${BASE_URL}/api/orders`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookieHeader
-      },
+      headers: authHeaders,
       body: JSON.stringify({
         orderId: testOrderNumber,
         status: 'preparing',
@@ -299,10 +301,7 @@ async function runTests() {
     // 6.2 Update status to 'shipped' (خرج للشحن)
     const patch2 = await fetch(`${BASE_URL}/api/orders`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookieHeader
-      },
+      headers: authHeaders,
       body: JSON.stringify({
         orderId: testOrderNumber,
         status: 'shipped',
@@ -323,10 +322,7 @@ async function runTests() {
     // 6.3 Update status to 'delivered' (تم التسليم بنجاح)
     const patch3 = await fetch(`${BASE_URL}/api/orders`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookieHeader
-      },
+      headers: authHeaders,
       body: JSON.stringify({
         orderId: testOrderNumber,
         status: 'delivered',
@@ -372,10 +368,14 @@ async function runTests() {
   // -------------------------------------------------------------
   section('8. حذف طلب الاختبار والتنظيف التام من Firestore (CRUD Delete)');
   try {
-    const cookieHeader = `heba_admin_token=${adminToken}`;
+    const authHeaders = {
+      'Content-Type': 'application/json',
+      'Cookie': cookieHeader,
+      'Authorization': `Bearer ${adminToken}`
+    };
     const delRes = await fetch(`${BASE_URL}/api/orders?orderId=${testOrderNumber}`, {
       method: 'DELETE',
-      headers: { 'Cookie': cookieHeader }
+      headers: authHeaders
     });
     const delData = await delRes.json();
     if (!delData.success) {
@@ -408,6 +408,11 @@ async function runTests() {
   section('9. فحص وتعديل أرقام المحافظ وإنستاباي في Firestore (Payment Settings CRUD)');
   try {
     const cookieHeader = `heba_admin_token=${adminToken}`;
+    const authHeaders = {
+      'Content-Type': 'application/json',
+      'Cookie': cookieHeader,
+      'Authorization': `Bearer ${adminToken}`
+    };
 
     // 9.1 Read settings
     const getSettingsRes = await fetch(`${BASE_URL}/api/settings/payment`);
@@ -430,15 +435,18 @@ async function runTests() {
 
     const putSettingsRes = await fetch(`${BASE_URL}/api/settings/payment`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookieHeader
-      },
+      headers: authHeaders,
       body: JSON.stringify(updatedPayload)
     });
-    const putResult = await putSettingsRes.json();
+    const putText = await putSettingsRes.text();
+    let putResult;
+    try {
+      putResult = JSON.parse(putText);
+    } catch {
+      fail(`فشل قراءة استجابة تحديث الإعدادات (HTTP ${putSettingsRes.status}): ${putText}`);
+    }
 
-    if (putResult.success && putResult.data.secondaryCashPhone === '01011223344') {
+    if (putResult && putResult.success && putResult.data.secondaryCashPhone === '01011223344') {
       pass(`تحديث الإدارة: تم تعديل بيانات الدفع بنجاح عبر API لوحة التحكم`);
     } else {
       fail(`فشل تحديث بيانات الدفع: ${JSON.stringify(putResult)}`);
@@ -455,10 +463,7 @@ async function runTests() {
     // 9.4 Revert to clean default
     await fetch(`${BASE_URL}/api/settings/payment`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookieHeader
-      },
+      headers: authHeaders,
       body: JSON.stringify({
         cashPhone: '01003508854',
         secondaryCashPhone: '',
