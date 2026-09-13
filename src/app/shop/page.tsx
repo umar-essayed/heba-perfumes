@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Search } from 'lucide-react';
 import { INITIAL_PRODUCTS } from '@/lib/data/initialProducts';
 import ProductCard from '@/components/product/ProductCard';
 
-export default function ShopPage() {
+function ShopContent() {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get('category') || 'all';
 
@@ -143,3 +143,16 @@ export default function ShopPage() {
     </div>
   );
 }
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen py-24 bg-[#0A0A0A] flex items-center justify-center text-[#C5A880] text-sm">
+        جاري تحميل كتالوج عطور هَيْبَة...
+      </div>
+    }>
+      <ShopContent />
+    </Suspense>
+  );
+}
+
