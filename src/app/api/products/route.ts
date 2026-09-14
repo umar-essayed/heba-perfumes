@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 import { INITIAL_PRODUCTS } from '@/lib/data/initialProducts';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const snapshot = await adminDb.collection('products').get();
@@ -24,6 +27,10 @@ export async function GET() {
       success: true,
       data: products,
       source: 'firestore'
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
+      }
     });
   } catch (error: any) {
     console.error('Error fetching products:', error);

@@ -436,9 +436,9 @@ export default function AdminPage() {
       const data = await res.json();
 
       if (data.success) {
-        showToast('تم تحديث بيانات العطر بنجاح!');
-        setProducts(prev => prev.map(p => (p.id === editingProduct.id ? editingProduct : p)));
+        showToast('تم تحديث بيانات العطر بنجاح في المتجر!');
         setEditingProduct(null);
+        fetchProducts();
       } else {
         showToast(data.error || 'فشل تحديث العطر.');
       }
@@ -1648,23 +1648,76 @@ export default function AdminPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-zinc-400 mb-1">السعر الأساسي (50 مل):</label>
+                    <label className="block text-zinc-400 mb-1">سعر 50 مل (ج.م):</label>
                     <input
                       type="number"
                       required
-                      value={editingProduct.price}
+                      min={1}
+                      value={editingProduct.price || ''}
                       onChange={e => {
-                        const newPrice = Number(e.target.value);
-                        const newSizes = [...(editingProduct.sizes || [])];
-                        if (newSizes[0]) newSizes[0].price = newPrice;
-                        setEditingProduct({ ...editingProduct, price: newPrice, sizes: newSizes });
+                        const new50 = Number(e.target.value);
+                        const currentSizes = editingProduct.sizes && editingProduct.sizes.length >= 2
+                          ? [...editingProduct.sizes]
+                          : [
+                              { size: '50 مل', price: new50 },
+                              { size: '100 مل', price: Math.round(new50 * 1.64) }
+                            ];
+                        const s0 = { ...(currentSizes[0] || { size: '50 مل' }), price: new50 };
+                        const s1 = currentSizes[1] || { size: '100 مل', price: Math.round(new50 * 1.64) };
+                        setEditingProduct({
+                          ...editingProduct,
+                          price: new50,
+                          sizes: [s0, s1]
+                        });
                       }}
                       className="w-full bg-[#181818] border border-white/10 rounded-xl p-2.5 text-white focus:outline-none focus:border-[#C5A880]"
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-zinc-400 mb-1">سعر 100 مل (ج.م):</label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      value={editingProduct.sizes?.[1]?.price ?? Math.round((editingProduct.price || 420) * 1.64)}
+                      onChange={e => {
+                        const new100 = Number(e.target.value);
+                        const currentSizes = editingProduct.sizes && editingProduct.sizes.length >= 2
+                          ? [...editingProduct.sizes]
+                          : [
+                              { size: '50 مل', price: editingProduct.price },
+                              { size: '100 مل', price: new100 }
+                            ];
+                        const s0 = currentSizes[0] || { size: '50 مل', price: editingProduct.price };
+                        const s1 = { ...(currentSizes[1] || { size: '100 مل' }), price: new100 };
+                        setEditingProduct({
+                          ...editingProduct,
+                          sizes: [s0, s1]
+                        });
+                      }}
+                      className="w-full bg-[#181818] border border-white/10 rounded-xl p-2.5 text-white focus:outline-none focus:border-[#C5A880]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-zinc-400 mb-1">السعر قبل الخصم (شطب):</label>
+                    <input
+                      type="number"
+                      placeholder="اختياري"
+                      value={editingProduct.originalPrice || ''}
+                      onChange={e => {
+                        const val = e.target.value ? Number(e.target.value) : undefined;
+                        setEditingProduct({ ...editingProduct, originalPrice: val });
+                      }}
+                      className="w-full bg-[#181818] border border-white/10 rounded-xl p-2.5 text-white focus:outline-none focus:border-[#C5A880]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-zinc-400 mb-1">التصنيف:</label>
                     <select
@@ -1676,6 +1729,28 @@ export default function AdminPage() {
                       <option value="حريمي">حريمي</option>
                       <option value="الاتنين">ميكس (الاتنين)</option>
                     </select>
+                  </div>
+
+                  <div className="flex items-center gap-4 pt-5">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={editingProduct.inStock ?? true}
+                        onChange={e => setEditingProduct({ ...editingProduct, inStock: e.target.checked })}
+                        className="rounded border-white/20 bg-zinc-800 text-[#C5A880] focus:ring-0"
+                      />
+                      <span className="text-zinc-300 text-xs">متوفر بالمخزون</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={editingProduct.isBestSeller ?? false}
+                        onChange={e => setEditingProduct({ ...editingProduct, isBestSeller: e.target.checked })}
+                        className="rounded border-white/20 bg-zinc-800 text-[#C5A880] focus:ring-0"
+                      />
+                      <span className="text-zinc-300 text-xs">الأكثر طلباً</span>
+                    </label>
                   </div>
                 </div>
 

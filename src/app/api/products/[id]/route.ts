@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebaseAdmin';
 import { INITIAL_PRODUCTS } from '@/lib/data/initialProducts';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -14,6 +17,10 @@ export async function GET(
       return NextResponse.json({
         success: true,
         data: { id: doc.id, ...doc.data() }
+      }, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
+        }
       });
     }
 
